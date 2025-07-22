@@ -117,7 +117,22 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+        // Custom colors for general business theme
+        blue: {
+          '900': '#0f172a',
+          '600': '#2563eb',
+          '500': '#3b82f6',
+          '400': '#60a5fa',
+          '700': '#1d4ed8',
+        },
+        teal: {
+          '900': '#042f2e',
+          '600': '#0d9488',
+          '500': '#14b8a6',
+          '400': '#2dd4bf',
+          '700': '#0f766e',
+        },
   		}
   	}
   },
