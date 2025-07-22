@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession, signOut } from '../../lib/auth-client';
 import { Button } from '../ui/button';
@@ -6,12 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
-import { LogOut, User, Mail, Calendar, Shield, Home } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { LogOut, User, Mail, Calendar, Shield, Home, Plus, Edit, Trash } from 'lucide-react';
 import { Container } from '../../lib/dev-container';
+
+type Client = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+};
 
 export const Dashboard: React.FC = () => {
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
+
+  const [clients, setClients] = useState<Client[]>([]);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [formData, setFormData] = useState<Omit<Client, 'id'>>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: '',
+  });
 
   const handleLogout = async () => {
     try {
@@ -29,6 +52,34 @@ export const Dashboard: React.FC = () => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingClient) {
+      setClients(prev => prev.map(c => c.id === editingClient.id ? { ...c, ...formData } : c));
+      setEditingClient(null);
+    } else {
+      const newClient = { ...formData, id: Date.now().toString() };
+      setClients(prev => [...prev, newClient]);
+    }
+    setFormData({ name: '', email: '', phone: '', address: '', notes: '' });
+  };
+
+  const handleEdit = (client: Client) => {
+    setEditingClient(client);
+    setFormData(client);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this client?')) {
+      setClients(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   if (isPending) {
@@ -158,67 +209,70 @@ export const Dashboard: React.FC = () => {
                 </Card>
               </Container>
 
-              <Container componentId="dashboard-stats">
+              <Container componentId="client-management">
                 <div className="md:col-span-2 space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Welcome back, {user.name?.split(' ')[0] || 'User'}!</CardTitle>
+                      <CardTitle>Manage Your Clients</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        You're successfully logged in to your account. This is your personal dashboard 
-                        where you can manage your profile and account settings.
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-primary">
-                                {Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
-                              </div>
-                              <p className="text-sm text-muted-foreground">Days as member</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-primary">
-                                Active
-                              </div>
-                              <p className="text-sm text-muted-foreground">Session status</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+                        <div>
+                          <Label htmlFor="name">Name</Label>
+                          <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                        </div>
+                        <div>
+                          <Label htmlFor="email">Email</Label>
+                          <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                          <Label htmlFor="phone">Phone</Label>
+                          <Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                          <Label htmlFor="address">Address</Label>
+                          <Input id="address" name="address" value={formData.address} onChange={handleInputChange} />
+                        </div>
+                        <div>
+                          <Label htmlFor="notes">Notes</Label>
+                          <Textarea id="notes" name="notes" value={formData.notes} onChange={handleInputChange} />
+                        </div>
+                        <Button type="submit" className="w-full">
+                          <Plus className="h-4 w-4 mr-2" />
+                          {editingClient ? 'Update Client' : 'Add Client'}
+                        </Button>
+                      </form>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm">Successfully logged in</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date().toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm">Profile accessed</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date().toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {clients.map(client => (
+                            <TableRow key={client.id}>
+                              <TableCell>{client.name}</TableCell>
+                              <TableCell>{client.email}</TableCell>
+                              <TableCell>{client.phone}</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" onClick={() => handleEdit(client)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" onClick={() => handleDelete(client.id)}>
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {clients.length === 0 && (
+                        <p className="text-center text-muted-foreground mt-4">No clients added yet.</p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
